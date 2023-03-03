@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sailpoint PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<sailpoint>
+	<ImportAction name="merge">
+		<Configuration name="SystemConfiguration">
+		<Attributes>
+			<Map>
+			<entry key="defaultEmailFromAddress" value="spadmin"/>
+			<entry key="defaultEmailHost" value="localhost"/>
+			<entry key="emailNotifierType" value="smtp"/>
+			</Map>
+			</Attributes>
+		</Configuration>
+	</ImportAction>
+</sailpoint>

@@ -1,0 +1,22 @@
+USE identityiq;
+
+--
+-- Identity
+--
+
+
+alter table identityiq.spt_identity add department varchar(450);
+create index spt_identity_department_ci on identityiq.spt_identity (department(255));
+
+alter table identityiq.spt_identity add location varchar(120);
+create index spt_identity_location_ci on identityiq.spt_identity (location);
+
+alter table identityiq.spt_identity add employeeid varchar(120);
+create index spt_identity_employeeid_ci on identityiq.spt_identity (employeeid);
+
+alter table identityiq.spt_identity add employeeid varchar(120);
+create index spt_identity_employeeid_ci on identityiq.spt_identity (employeeid);
+
+alter table identityiq.spt_identity add region varchar(120);
+
+alter table identityiq.spt_identity add cost_center varchar(120);
