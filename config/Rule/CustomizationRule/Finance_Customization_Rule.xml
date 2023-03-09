@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="Finance Customization Rule" type="ResourceObjectCustomization">
+  <Description>This rule is configured on the application and is called after the connector has build a ResourceObject from the native application data.
+
+Initially designed for non-rule based connectors to add SPPrivileged flag to an object, but could be used to do any transformations.</Description>
+  <Signature returnType="ResourceObject"/>
+  <Source><![CDATA[String status = object.getAttribute("app2_inactive");
+  String privileged = object.getAttribute("app2_privileged");
+
+  String accountName =object.getAttribute("userName");
+
+  
+  log.error("Account is "+object.getAttribute("userName"));
+  log.error("Account Status "+status);
+  
+  if ("true".equals(status)) {
+    object.put("IIQDisabled",true);
+    //Locked IIQLocked = true
+    //IIQPrivileged
+  }
+
+  if ("true".equals(privileged)) {
+    object.put("IIQPrivileged",true);
+  }
+
+
+
+return object;]]></Source>
+</Rule>
