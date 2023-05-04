@@ -1,0 +1,93 @@
+<Bundle created="1678933865132" displayName="LDAP VPN Role" id="c0a8e70186dd13448186e841b2ac13f0" name="LDAP VPN Role" type="business">
+  <Attributes>
+    <Map>
+      <entry key="sysDescriptions">
+        <value>
+          <Map>
+            <entry key="en_US" value="This is LDAP VPN Role"/>
+          </Map>
+        </value>
+      </entry>
+    </Map>
+  </Attributes>
+  <Inheritance>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e835f12013ce" name="LDAP Roles"/>
+  </Inheritance>
+  <Owner>
+    <Reference class="sailpoint.object.Identity" id="c0a8e7018662103e818681999eec0e36" name="James.Smith"/>
+  </Owner>
+  <Permits>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e83aabc213dc" name="LDAP Contractor IT Role"/>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e83aabc613de" name="LDAP Employees IT Role"/>
+  </Permits>
+  <Requirements>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e83aaba313da" name="LDAP VPN IT Role"/>
+  </Requirements>
+</Bundle>
+<Bundle created="1678933865158" displayName="LDAP Contractor Role" id="c0a8e70186dd13448186e841b2c613f1" name="LDAP Contractor Role" type="business">
+  <Attributes>
+    <Map>
+      <entry key="sysDescriptions">
+        <value>
+          <Map>
+            <entry key="en_US" value="This is LDAP Contractor Role"/>
+          </Map>
+        </value>
+      </entry>
+    </Map>
+  </Attributes>
+  <Inheritance>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e835f12013ce" name="LDAP Roles"/>
+  </Inheritance>
+  <Owner>
+    <Reference class="sailpoint.object.Identity" id="c0a8e7018662103e818681999eec0e36" name="James.Smith"/>
+  </Owner>
+  <Requirements>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e83aabc213dc" name="LDAP Contractor IT Role"/>
+  </Requirements>
+</Bundle>
+<Bundle created="1678933865168" displayName="LDAP Employee Role" id="c0a8e70186dd13448186e841b2d013f2" name="LDAP Employee Role" type="business">
+  <Attributes>
+    <Map>
+      <entry key="sysDescriptions">
+        <value>
+          <Map>
+            <entry key="en_US" value="This is LDAP Employee Role"/>
+          </Map>
+        </value>
+      </entry>
+    </Map>
+  </Attributes>
+  <Inheritance>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e835f12013ce" name="LDAP Roles"/>
+  </Inheritance>
+  <Owner>
+    <Reference class="sailpoint.object.Identity" id="c0a8e7018662103e818681999eec0e36" name="James.Smith"/>
+  </Owner>
+  <Requirements>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e83aabc613de" name="LDAP Employees IT Role"/>
+  </Requirements>
+</Bundle>
+<Bundle created="1678933865180" displayName="Okta SSO Role" id="c0a8e70186dd13448186e841b2dc13f3" name="Okta SSO Access" type="business">
+  <Attributes>
+    <Map>
+      <entry key="sysDescriptions">
+        <value>
+          <Map>
+            <entry key="en_US" value="This role will enable sailpoint access"/>
+          </Map>
+        </value>
+      </entry>
+    </Map>
+  </Attributes>
+  <Inheritance>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e83aabd313e0" name="Okta SailPoint SSO IT Role"/>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e835f14413cf" name="Okta"/>
+  </Inheritance>
+  <Owner>
+    <Reference class="sailpoint.object.Identity" id="c0a8e7018662103e81868199a8270f08" name="Aaron.Nichols"/>
+  </Owner>
+  <Requirements>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e83aabd313e0" name="Okta SailPoint SSO IT Role"/>
+  </Requirements>
+</Bundle>

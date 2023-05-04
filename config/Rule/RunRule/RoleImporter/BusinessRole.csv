@@ -1,0 +1,5 @@
+RoleName,RoleDisplayName,Description,Owner,InheritedRole,RequiredRoles,PermittedRoles
+LDAP VPN Role,LDAP VPN Role,This is LDAP VPN Role,James.Smith,LDAP Roles,LDAP VPN IT Role,LDAP Contractor IT Role;LDAP Employees IT Role
+LDAP Contractor Role,LDAP Contractor Role,This is LDAP Contractor Role,James.Smith,LDAP Roles,LDAP Contractor IT Role,
+LDAP Employee Role,LDAP Employee Role,This is LDAP Employee Role,James.Smith,LDAP Roles,LDAP Employees IT Role,
+Okta SSO Access,Okta SSO Role,This role will enable sailpoint access,Aaron.Nichols,Okta,Okta SailPoint SSO IT Role

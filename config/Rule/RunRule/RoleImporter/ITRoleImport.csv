@@ -1,0 +1,5 @@
+RoleName,RoleDisplayName,Description,InheritedRole,Entitlement
+LDAP VPN IT Role,LDAP VPN IT Role,This a LDAP VPN IT Role,LDAP Roles,"LDAP#groups#cn=vpn,ou=groups,dc=sailpoint,dc=com"
+LDAP Contractor IT Role,LDAP Contractor IT Role,This a LDAP Contractor IT Role,LDAP Roles,"LDAP#groups#cn=contractors,ou=groups,dc=sailpoint,dc=com"
+LDAP Employees IT Role,LDAP Employees IT Role,This a LDAP Employees IT Role,LDAP Roles,"LDAP#groups#cn=employees,ou=groups,dc=sailpoint,dc=com"
+Okta SailPoint SSO IT Role,Okta SailPoint SSO IT Role,,Okta,Okta#applications#0oa8ds0wuxe2L1Ktu5d7;Okta#groups#00g8f7aibrMBPucl55d7

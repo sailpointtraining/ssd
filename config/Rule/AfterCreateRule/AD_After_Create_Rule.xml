@@ -1,0 +1,171 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="AD After Create Script" type="ConnectorAfterCreate">
+  <Attributes>
+    <Map>
+      <entry key="ObjectOrientedScript" value="true"/>
+      <entry key="disabled" value="false"/>
+      <entry key="extension" value=".ps1"/>
+      <entry key="program" value="powershell.exe"/>
+      <entry key="timeout" value="1200"/>
+    </Map>
+  </Attributes>
+  <Description>
+    An IdentityIQ server-side rule that is executed after the connector's provisioning method is called.
+    This gives the customer the ability to customize or react to anything in the ProvisioningPlan AFTER it has been sent
+    out to the specific applications.
+    
+  </Description>
+  <Signature>
+    <Inputs>
+      <Argument name="log">
+        <Description>
+          The log object associated with the SailPointContext.
+        </Description>
+      </Argument>
+      <Argument name="context">
+        <Description>
+          A sailpoint.api.SailPointContext object that can be used to query the database if necessary.
+        </Description>
+      </Argument>
+      <Argument name="identity">
+        <Description>
+           The Identity object that represents the user
+           that is being aggregated.
+        </Description>
+      </Argument>
+      <Argument name="attributeDefinition">
+        <Description>
+           The AttributeDefinition object for this attribute.
+        </Description>
+      </Argument>
+      <Argument name="plan">
+        <Description>
+          The ProvisioningPlan object on its way to the Connector.
+        </Description>
+      </Argument>
+      <Argument name="application">
+        <Description>
+          The application object that references this before/after script.
+        </Description>
+      </Argument>
+      <Argument name="result">
+        <Description>
+          The ProvisioningResult object returned by the connectors provision method. This can be null and in many cases
+          the connector will not return a result and instead will annotate the plan's ProvisioningResult either at the
+          plan or account level.
+        </Description>
+      </Argument>
+    </Inputs>
+  </Signature>
+  <Source>
+   
+    
+    
+   
+    # Declare Array of ErrorMessages to return.
+    [System.Collections.ArrayList]$errorList = @()
+    $powershellLogPath = "C:/IQService/"
+    $LogFilePath = $powershellLogPath + "afterCreateLog.txt"
+    
+    $Now = Get-Date -Format 'MM/dd/yyyy hh:mm:ss tt'
+   
+    
+    Function Write-Log ($level, $message) {
+      $LogFilePath = $powershellLogPath + "afterCreateLog.txt"
+      
+      Add-Content -Path $LogFilePath -Value "$Now : $level : $message"
+      if($level -eq "ERROR") {
+        $errorList.Add($message)
+      }
+    } 
+    # end Write-Log function
+     
+    $RuleName = "AD After Create Script"
+   
+    Write-Log "TRACE" "Start $RuleName"
+    
+    $userUPN = $null
+    
+    # Refer to SailPoint class library Requires PowerShell v2 installed on the system.
+    Add-type -path Utils.dll
+
+    # Read the environment variables
+    $sRequest = New-Object System.IO.StringReader([System.String]$env:Request);
+    $sResult = New-Object System.IO.StringReader([System.String]$env:Result);
+
+    # Form the xml reader objects
+    $xmlRequest = [System.xml.XmlTextReader]([sailpoint.utils.xml.XmlUtil]::getReader($sRequest));
+    $xmlResult = [System.xml.XmlTextReader]([sailpoint.utils.xml.XmlUtil]::getReader($sResult));
+    
+    $sReader = New-Object System.IO.StringReader([System.String]$env:Request);
+                      
+    # Create SailPoint objects
+    $requestObject = New-Object Sailpoint.Utils.objects.AccountRequest($xmlRequest);
+    $resultObject = New-Object Sailpoint.Utils.objects.ServiceResult($xmlResult);
+  
+  Try {
+  
+    foreach ($attribute in $requestObject.AttributeRequests){
+            If($attribute.Name -eq "userPrincipalName"){
+              $userUPN = $attribute.value
+              Write-Log "INFO" "User upn: $userUPN"
+            }
+            If($attribute.Name -eq "sAMAccountName"){
+              $usersAMAccountName = $attribute.value
+              Write-Log "INFO" "User sAMAccountName: $usersAMAccountName"
+            }
+       }
+
+  $attributes = $requestObject.Attributes
+  
+    $attributes.GetEnumerator() | ForEach-Object {
+        if ($($_.Key) -eq "needsMail") {
+          #$needsMail =  $true
+         }    
+    }
+  
+  ################## Start - Identity Mailbox Details ##################
+    $primarySMTPAddress = $userUPN
+    $primaryRoutingAddress = $userUPN
+  ################## End - Identity Mailbox Details ##################
+  
+  #Write-Log "INFO" "Does User need mail? $needsMail"
+  
+  ################## Start - Exchange Provisioning ##################
+  
+         
+        try{
+        	$userPrefix = $userUPN.replace('@%%AD_EXCHANGE_EMAILSUFFIX%%','')
+            Write-Log "INFO" "needs mail is true: $needsMail"
+            Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn
+            Enable-RemoteMailbox -identity $usersAMAccountName -PrimarySmtpAddress $primaryRoutingAddress -RemoteRoutingAddress "$userPrefix@%%AD_EXCHANGE_PRIMARYROUTINGADDRESSSUFFIX%%"
+            Enable-RemoteMailbox -identity $usersAMAccountName -Archive  
+            Write-Log "INFO" "Completed Enable-RemoteMailbox -identity $usersAMAccountName -PrimarySmtpAddress $primaryRoutingAddress -RemoteRoutingAddress $userPrefix@training.com"
+            Set-ADUser -Identity $usersAMAccountName -add @{ProxyAddresses="smtp:$primaryRoutingAddress","smtp:$usersAMAccountName@training.com","smtp:$userPrefix@onmicrosoft.training.com" -split ","}
+            if($error -eq $null) {
+                Write-Log "INFO" "Error is null for  $usersAMAccountName."
+            }
+            else {
+                Write-Log "ERROR" "$($error[0]) are errors for $usersAMAccountName";
+            }
+        }
+        catch {
+
+        	Write-Log "ERROR" "Printing Error Messages here for $usersAMAccountName"
+            Write-Log "ERROR" $_
+            Write-Log "ERROR" $_.Exception.Message
+            Write-Log "ERROR" $_.Exception.StackTrace
+        }
+    
+  } catch {
+    $ErrorMessage = $_.Exception.Message
+    Write-Log "INFO" "Error Message: $ErrorMessage"
+  }
+    
+    ################## End - Exchange Provisioning ##################
+  Write-Log "TRACE" "End $ruleName"
+    
+    
+  </Source>
+</Rule>

@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE TaskDefinition PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<TaskDefinition name="Role Importer Task" resultAction="Delete" subType="task_item_type_generic" type="Generic">
+  <Attributes>
+    <Map>
+      <entry key="TaskDefinition.runLengthAverage" value="0"/>
+      <entry key="TaskDefinition.runLengthTotal" value="0"/>
+      <entry key="TaskDefinition.runs" value="1"/>
+      <entry key="TaskSchedule.host"/>
+      <entry key="ruleName" value="Role Importer Rule"/>
+      <entry key="taskCompletionEmailNotify" value="Disabled"/>
+      <entry key="taskCompletionEmailRecipients"/>
+      <entry key="taskCompletionEmailTemplate"/>
+    </Map>
+  </Attributes>
+  <Description>A task that can be used to run an arbitrary rule.</Description>
+  <Owner>
+    <Reference class="sailpoint.object.Identity" name="spadmin"/>
+  </Owner>
+  <Signature>
+    <Inputs>
+      <Argument helpKey="help_task_run_rule_rule" name="ruleName" required="true" type="Rule">
+        <Prompt>label_rule</Prompt>
+      </Argument>
+      <Argument helpKey="help_task_run_rule_ruleconfig" name="ruleConfig" type="string">
+        <Prompt>label_rule_config</Prompt>
+      </Argument>
+      <Argument helpKey="File Path" name="inputPath" required="true" type="string">
+        <Prompt>Role File Path</Prompt>
+      </Argument>
+      <Argument helpKey="Export File Path" name="exportPath" type="string">
+        <Prompt>Role Export File Path</Prompt>
+      </Argument>
+      <Argument helpKey="Role Type" name="roletype" required="true" type="string">
+        <Prompt>Role Type</Prompt>
+      </Argument>
+	  <Argument helpKey="Create Roles in IIQ" name="createRolesInIIQ" required="true" type="boolean">
+        <Prompt>Create Roles in IIQ, For Simulation do not check this option</Prompt>
+      </Argument>
+    </Inputs>
+  </Signature>
+  <Parent>
+    <Reference class="sailpoint.object.TaskDefinition" name="Run Rule"/>
+  </Parent>
+</TaskDefinition>

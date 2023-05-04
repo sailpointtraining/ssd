@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="Certification Exclusion Rule" type="CertificationExclusion">
+  <Description>This rule is an example Certification Exclusion rule that removes all of the certifiable items from a certification if the identity being certified is marked as inactive.</Description>
+  <Signature returnType="String"/>
+  <Source><![CDATA[
+  import sailpoint.object.*;
+  import sailpoint.api.*;
+
+import sailpoint.tools.*;
+
+import sailpoint.api.IdentityService;
+
+import sailpoint.api.certification.DataOwnerCertificationBuilder.DataOwnerCertifiable;
+
+import sailpoint.api.certification.DataOwnerCertifiableEntity.DataItem;
+
+import java.util.List;
+
+import java.util.ArrayList;
+
+
+
+
+
+if(null!=items){
+
+  
+
+  
+
+  Iterator it = items.iterator();
+
+  while (it.hasNext()){
+
+    Certifiable certifiable = it.next();
+
+    Entitlements ents = null;
+
+    Identity identity = null;
+
+      log.error("Certifiable is Entitlements"+certifiable);
+
+    if(certifiable instanceof Entitlements){
+
+      ents = (Entitlements) certifiable;
+
+    }
+
+    else if(certifiable instanceof DataOwnerCertifiable){
+
+       log.error("Certifiable is DataOwnerCertifiable");
+
+      ents = certifiable.getEntitlements();
+
+    }
+
+    log.error("ents  "+ents);
+    
+
+    if(null!=ents){
+
+      Attributes attrs = ents.getAttributes();
+      log.error("Attrs "+attrs);
+      
+      ManagedAttribute ma = ManagedAttributer.get(context,context.getObjectByName(Application.class,"Finance"),"groupmbr",attrs.get("groupmbr"));
+      if (ma != null) {
+        if (ma.getAttribute("admingroup") != null) {
+          boolean isAdminGroup = ma.getAttribute("admingroup");
+          if (!isAdminGroup) {
+            itemsToExclude.add(certifiable);
+          }
+        }
+        else{
+        itemsToExclude.add(certifiable);
+        }
+      }
+      
+      else {
+      	log.error("entitlement not found");
+      }
+      
+      
+
+    }
+
+  }
+
+  items.removeAll(itemsToExclude);
+
+}
+
+return "removing non admin groups ";
+  
+  
+  ]]></Source>
+</Rule>

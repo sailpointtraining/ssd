@@ -1,0 +1,517 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sailpoint PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<sailpoint>
+<Rule language="beanshell" name="Role Importer Library">
+  <Source><![CDATA[
+  import sailpoint.object.Filter;
+  import sailpoint.api.IdentityService;
+  import sailpoint.api.SailPointContext;
+  import sailpoint.object.Application;
+  import sailpoint.object.Identity;
+  import sailpoint.object.Link;
+  import sailpoint.object.Attributes;
+  import sailpoint.object.ResourceObject;
+  import sailpoint.object.QueryOptions;
+  import sailpoint.object.IdentityEntitlement;
+  import sailpoint.object.Profile;
+  import sailpoint.object.Bundle;
+  import sailpoint.object.Schema;
+  import sailpoint.object.AttributeDefinition;
+
+
+  import java.util.Locale;
+  import java.text.SimpleDateFormat;
+  import java.util.Date;
+  import java.util.Calendar;
+  import java.text.DateFormat;
+  import java.lang.System;
+
+
+  import sailpoint.tools.GeneralException;
+  import sailpoint.tools.CloseableIterator;
+  import sailpoint.tools.Util;
+  import sailpoint.tools.Message;
+  import sailpoint.tools.Message.Type;
+  import sailpoint.tools.xml.XMLObjectFactory;
+
+  import sailpoint.connector.ConnectorFactory;
+  import sailpoint.connector.Connector;
+
+  import sailpoint.api.SailPointContext;
+
+
+  import java.util.Hashtable;
+  import java.util.HashMap;
+  import java.util.List;
+  import java.util.ArrayList;
+  import java.lang.Long;
+  import java.lang.String;
+  import java.lang.Boolean;
+
+  import org.apache.commons.logging.LogFactory;
+  import org.apache.commons.logging.Log;
+
+  Log logger = LogFactory.getLog("Role.Importer.Library");
+
+  public void updateTaskResult( String level, String msg){
+    if ( void != taskResult && null != taskResult ){
+      switch(level){
+        case "Error" :
+        taskResult.addMessage(Message.error(msg));
+        break;
+        case "Info" :
+        taskResult.addMessage(Message.info(msg));
+        break;
+        case "Warn" :
+        taskResult.addMessage(Message.warn(msg));
+        break;
+        default :
+        taskResult.addMessage(Message.warn("Invalid Message Level: "+level+" though the message is "+msg));
+        break;
+      }
+    }
+  }
+
+  public Bundle getInheritanceRole(String role){
+    logger.debug("Enter getInheritanceRole "+role);
+    Bundle bObj = context.getObjectByName(Bundle.class,role);
+    if ( bObj == null ){
+      bObj = new Bundle();
+      bObj.setType("organizational");
+      bObj.setName(role);
+      context.saveObject(bObj);
+      context.commitTransaction();
+    }
+    logger.debug("Exit getInheritanceRole "+bObj);
+    return bObj;
+  }
+
+
+  public void createOrUpdateITRole(List rolesMap){
+    logger.debug("Enter createOrUpdateITRole");
+    int roleCounter = 0;
+    for ( Map roleMap : rolesMap ) {
+      logger.debug("Processiing role map "+roleMap);
+      String roleName = roleMap.get("RoleName");
+      String roleDisplayName = roleMap.get("RoleDisplayName");
+      String decription = roleMap.get("description");
+      String inheritance = roleMap.get("InheritedRole");
+      String entitlementStr = roleMap.get("Entitlement");
+
+      //updateTaskResult("Info","Role Name is "+roleName);
+      if(null == roleName) {
+        updateTaskResult("Warn","Role Name is null");
+        continue;
+      }
+
+      String isCreated = "Updated";
+      String status = null;
+      Bundle bundle = context.getObjectByName(Bundle.class,roleName);
+      if ( null == bundle ){
+        logger.debug("Role "+roleName+" not found in the IIQ creating");
+        isCreated = "Created";
+        bundle = new Bundle();
+        bundle.setType("it");
+        bundle.setName(roleName);
+      }
+
+      if ( null != roleDisplayName ) {
+        bundle.setDisplayName(roleDisplayName);
+      }
+
+      if ( null != decription ) {
+        bundle.addDescription("en_US",decription);
+      }
+
+      if ( null != inheritance ){
+
+        List inheritedRoles = Util.delimToList(";",inheritance,true);
+        for ( String inheritedRole : inheritedRoles ){
+          Bundle inheritedRoleObj = getInheritanceRole(inheritedRole);
+          bundle.add(inheritedRoleObj);
+        }
+      }
+
+      if ( null != entitlementStr ){
+
+        List entitlements = Util.delimToList(";",entitlementStr,true);
+        List profiles = new ArrayList();
+        for(String entitlement : entitlements) {
+          List entitlementProps = Util.delimToList("#",entitlement,true);
+
+          //Entitlements Props will 3 elements in the list
+          //1. Application name
+          //2. Entitlement Attribute
+          //3. Entitlement values
+          String applicationName = entitlementProps.get(0);
+          Application appObj = context.getObjectByName(Application.class,applicationName);
+          if ( null == appObj ) {
+            status = "Application ("+applicationName+") not found while processing role "+  roleName;
+            continue;
+          }
+
+          String attribute = entitlementProps.get(1);
+          if ( null == attribute ) {
+            status = "Entitlement Attribute not found while processing role "+  roleName;
+            continue;
+          }
+
+          Schema accSchema = appObj.getAccountSchema();
+          boolean attrIsMulti = false;
+          if ( accSchema != null ){
+            AttributeDefinition def = accSchema.getAttributeDefinition(attribute);
+            if ( def != null ) {
+              attrIsMulti = def.isMulti();
+            }
+          }
+
+          String entStr = entitlementProps.get(2);
+          if ( null == entStr ) {
+            status = "Entitlement value is null while processing role "+  roleName;
+            continue;
+          }
+
+
+          List entList = Util.delimToList("|",entStr,true);
+          if ( attrIsMulti ) {
+            Profile profile = new Profile();
+            profile.setApplication(appObj);
+            profile.addConstraint(Filter.containsAll(attribute,entList));
+            profiles.add(profile);            
+          }
+          else{
+            for ( String entValue : entList ){
+              Profile profile = new Profile();
+              profile.setApplication(appObj);
+              profile.addConstraint(Filter.eq(attribute,entValue));
+              profiles.add(profile); 
+            }
+          }         
+
+        }
+        bundle.assignProfiles(profiles);
+
+      }
+      roleXml.append(bundle.toXml(false));
+      logger.debug("status "+status);
+      logger.debug("Role xml "+bundle.toXml());
+
+      if(null != status){
+        updateTaskResult("Warn","Role "+roleName+" "+isCreated+" with error :"+status);
+      }
+      else{
+        updateTaskResult("Info","Role "+roleName+" "+isCreated+" successfully.");
+      }
+
+      if ( createRolesInIIQ && null == status){
+        context.saveObject(bundle);
+        if( roleCounter % 10 == 0 ){
+          context.commitTransaction();
+          context.decache();
+        }
+      }
+      roleCounter++;
+    }
+    if ( createRolesInIIQ ){     	
+
+      context.commitTransaction();
+      context.decache();
+
+    }
+  }
+
+  //Method to create or Update Business roles
+
+
+  public void createOrUpdateBusinessRole(List rolesMap){
+    logger.debug("Enter createOrUpdateBusinessRole");
+    int roleCounter = 0;
+    for ( Map roleMap : rolesMap ) {
+      logger.debug("Processiing role map "+roleMap);
+      String roleName = roleMap.get("RoleName");
+      String roleDisplayName = roleMap.get("RoleDisplayName");
+      String decription = roleMap.get("Description");
+      String owner = roleMap.get("Owner");
+      String inheritance = roleMap.get("InheritedRole");
+      String requiredRoles = roleMap.get("RequiredRoles");
+      String permittedRoles	=	roleMap.get("PermittedRoles");
+
+
+      //updateTaskResult("Info","Role Name is "+roleName);
+      if(null == roleName) {
+        updateTaskResult("Warn","Role Name is null");
+        continue;
+      }
+
+      String isCreated = "Updated";
+      String status = null;
+      Bundle bundle = context.getObjectByName(Bundle.class,roleName);
+      if ( null == bundle ){
+        logger.debug("Role "+roleName+" not found in the IIQ creating");
+        isCreated = "Created";
+        bundle = new Bundle();
+        bundle.setType("business");
+        bundle.setName(roleName);
+      }
+
+      if ( null != roleDisplayName ) {
+        bundle.setDisplayName(roleDisplayName);
+      }
+
+      if ( null != decription ) {
+        bundle.addDescription("en_US",decription);
+      }
+
+      //Bundle owner
+      if ( owner == null ) {
+        Identity spIdn = context.getObjectByName(Identity.class,"spadmin");
+        bundle.setOwner(spIdn);
+      }
+      else{
+        Identity ownerIdn = context.getObjectByName(Identity.class,owner);
+        if ( ownerIdn == null ){
+          status = "Role Name owner "+owner+" not found in IIQ";
+          updateTaskResult("Warn",status);
+          continue;
+        }
+        else{
+          bundle.setOwner(ownerIdn);
+        }
+      }
+
+      if ( null != inheritance ){
+
+        List inheritedRoles = Util.delimToList(";",inheritance,true);
+        for ( String inheritedRole : inheritedRoles ){
+          Bundle inheritedRoleObj = getInheritanceRole(inheritedRole);
+          bundle.add(inheritedRoleObj);
+        }
+      }
+
+      //required roles
+      if ( null != requiredRoles ){
+        List requiredRolesList = Util.delimToList(";",requiredRoles,true);
+        List reqBuns = new ArrayList();
+        for(String requiredRole : requiredRolesList) {
+          Bundle roleObj = context.getObjectByName(Bundle.class,requiredRole);
+          if ( roleObj == null ) {
+            status = "Required Role: "+requiredRole+" not found in IIQ for role: "+roleName;
+            updateTaskResult("Warn",status);
+            continue;
+          }
+          reqBuns.add(roleObj);          
+        }
+        bundle.setRequirements(reqBuns);
+      }
+
+      //permitted roles
+      if ( null != permittedRoles ){
+        List permittedRolesList = Util.delimToList(";",permittedRoles,true);
+        List perBuns = new ArrayList();
+        for(String permittedRole : permittedRolesList) {
+          Bundle roleObj = context.getObjectByName(Bundle.class,permittedRole);
+          if ( roleObj == null ) {
+            status = "Permitted Role: "+permittedRole+" not found in IIQ for role: "+roleName;
+            updateTaskResult("Warn",status);
+            continue;
+          }
+          perBuns.add(roleObj);          
+        }
+        bundle.setPermits(reqBuns);
+      }
+
+      String roleSelector = selector;
+      //selector
+      if ( null != roleSelector ){
+        try{
+          while(roleSelector.indexOf("%") != -1){
+            int start = roleSelector.indexOf("%");
+            int end = roleSelector.indexOf("%",start+1);
+
+            String token =  roleSelector.substring(start+1,end);
+            logger.debug("Token is "+token);
+           
+            String tokenValue = roleMap.get(token);
+             logger.debug("Token value is "+tokenValue);
+            if(tokenValue == null){
+              status = "Selector token: "+token+" value not in the file for: "+roleName;
+              updateTaskResult("Warn",status);
+              continue;
+            }
+            roleSelector = roleSelector.replace("%"+token+"%",tokenValue);
+
+          }
+        }catch(StringIndexOutOfBoundsException se){
+          logger.debug("String out of nbound exception");
+          updateTaskResult("Warn","Exception occured while parsing selector Please validate the selector for: "+roleName);        		
+          status = "failed";
+          continue;
+        }
+        XMLObjectFactory factory = XMLObjectFactory.getInstance();
+        bundle.setSelector(factory.parseXml(null,roleSelector,false));
+      }
+
+
+
+
+      roleXml.append(bundle.toXml(false));
+      logger.debug("status "+status);
+      logger.debug("Role xml "+bundle.toXml());
+
+      if(null != status){
+        updateTaskResult("Warn","Role is not "+roleName+" "+isCreated+" due to error :"+status);
+      }
+      else{
+        updateTaskResult("Info","Role "+roleName+" "+isCreated+" successfully.");
+      }
+
+      if ( createRolesInIIQ && null == status){
+        context.saveObject(bundle);
+        if( roleCounter % 10 == 0 ){
+          context.commitTransaction();
+          context.decache();
+        }
+      }
+      roleCounter++;
+    }
+    if ( createRolesInIIQ ){     	
+
+      context.commitTransaction();
+      context.decache();
+
+    }
+  }
+
+  ]]></Source>
+</Rule>
+
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="Role Importer Rule">
+  <ReferencedRules>
+    <Reference class="sailpoint.object.Rule" name="Role Importer Library"/>
+  </ReferencedRules>
+  <Source><![CDATA[
+  import sailpoint.object.ResourceObject;
+  import sailpoint.object.Attributes;
+  import sailpoint.object.Identity;
+  import sailpoint.object.RoleAssignment;
+  import sailpoint.object.Profile;
+  import sailpoint.object.Application;
+  import sailpoint.object.Bundle;
+  import sailpoint.server.Auditor;
+  import java.util.Date;
+  import java.text.DateFormat;
+  import sailpoint.object.Filter.LeafFilter;
+  import sailpoint.object.Filter;
+  import sailpoint.object.IdentitySelector;
+  import sailpoint.object.IdentitySelector.MatchExpression;
+  import sailpoint.object.IdentitySelector.MatchTerm;
+  import sailpoint.tools.Util;
+  import sailpoint.tools.GeneralException;
+  import sailpoint.tools.RFC4180LineParser;
+
+  import sailpoint.tools.Message;
+
+  import java.io.FileReader;
+  import java.io.BufferedReader;
+  import java.io.FileNotFoundException;
+  
+  import org.apache.commons.logging.LogFactory;
+  import org.apache.commons.logging.Log;
+
+  Log logger = LogFactory.getLog("role.importer.rule");
+		
+
+  String roleType;
+  String inputFile;
+  String exportFile;
+  Boolean createRolesInIIQ = false;
+  String selector;
+  StringBuilder roleXml = new StringBuilder();
+  if ( null != config ) {
+    inputFile = config.get("inputPath");
+    exportFile = config.get("exportPath");
+    roleType = config.get("roletype");
+    createRolesInIIQ = Boolean.valueOf(config.get("createRolesInIIQ"));
+    selector = config.get("selector");
+
+    if( null == inputFile || void == inputFile ) {
+      return taskResult.addMessage(Message.error("Input file path in null"));
+    }
+
+    if( null == roleType || void == roleType ) {
+      return taskResult.addMessage(Message.error("Role roleType is null"));
+    }
+    else if( !(roleType.equalsIgnoreCase("it") || roleType.equalsIgnoreCase("business")) ) {
+      return taskResult.addMessage(Message.error("Role Type "+roleType+" is not supported choose either IT or Business"));
+    }
+  }
+
+  String dlm = ",";
+  FileReader fr;
+  List roles = new ArrayList();
+  int lineCounter = 0;
+
+  try{
+	logger.debug("Reading file "+inputFile);
+    fr = new FileReader(inputFile);
+    BufferedReader br;
+    try{
+      br = new BufferedReader(fr);
+
+      List headers = new ArrayList();
+      String thisLine = null;
+      RFC4180LineParser parser = new RFC4180LineParser(dlm);
+
+      while ( null != (thisLine = br.readLine()) ) {
+        List tokens = parser.parseLine(thisLine);
+
+        if ( lineCounter == 0 ) {
+          for ( int i = 0; i < tokens.size(); i++ ) {
+            headers.add(tokens.get(i).trim());
+          }
+        }
+        else {
+          HashMap lineHash = new HashMap();
+          for ( int i = 0; i < tokens.size(); i++ ) {
+            String headerString = headers.get(i);
+            String valueString = tokens.get(i);
+            lineHash.put(headerString,valueString);            
+          }
+          roles.add(lineHash);
+        }
+        lineCounter++;
+      }
+    }
+    catch ( Exception e ) {
+      return taskResult.addMessage(Message.error("Exception occured while reading file"+e));
+    }
+    finally{
+    	br.close();
+    }
+  }
+  catch ( FileNotFoundException fe ) {
+    return taskResult.addMessage(Message.error("File "+inputFile+" not found. Please check the file path."));
+  }
+
+
+  logger.debug("Reading file completed.");
+  
+  if( roles.size() > 0 ) {
+    if( roleType.equalsIgnoreCase("it") ) {
+      logger.debug("Creating or Updating IT Roles");
+    	createOrUpdateITRole(roles);
+    }
+    if( roleType.equalsIgnoreCase("business") ) {
+      logger.debug("Creating or Updating Business Roles");
+    	createOrUpdateBusinessRole(roles);
+    }
+  }
+  
+  logger.debug("Writing role xml to file "+exportFile);
+  Util.writeFile(exportFile,roleXml.toString());
+  
+  ]]></Source>
+</Rule>
+<sailpoint>

@@ -1,0 +1,131 @@
+<Bundle displayName="LDAP VPN IT Role" name="LDAP VPN IT Role" type="it">
+  <Attributes>
+    <Map>
+      <entry key="sysDescriptions">
+        <value>
+          <Map>
+            <entry key="en_US" value="This a LDAP VPN IT Role"/>
+          </Map>
+        </value>
+      </entry>
+    </Map>
+  </Attributes>
+  <Inheritance>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e835f12013ce" name="LDAP Roles"/>
+  </Inheritance>
+  <Profiles>
+    <Profile>
+      <ApplicationRef>
+        <Reference class="sailpoint.object.Application" id="c0a8e701869b19698186c96baddb16c8" name="LDAP"/>
+      </ApplicationRef>
+      <Constraints>
+        <Filter operation="CONTAINS_ALL" property="groups">
+          <Value>
+            <List>
+              <String>cn=vpn,ou=groups,dc=sailpoint,dc=com</String>
+            </List>
+          </Value>
+        </Filter>
+      </Constraints>
+    </Profile>
+  </Profiles>
+</Bundle>
+<Bundle displayName="LDAP Contractor IT Role" name="LDAP Contractor IT Role" type="it">
+  <Attributes>
+    <Map>
+      <entry key="sysDescriptions">
+        <value>
+          <Map>
+            <entry key="en_US" value="This a LDAP Contractor IT Role"/>
+          </Map>
+        </value>
+      </entry>
+    </Map>
+  </Attributes>
+  <Inheritance>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e835f12013ce" name="LDAP Roles"/>
+  </Inheritance>
+  <Profiles>
+    <Profile>
+      <ApplicationRef>
+        <Reference class="sailpoint.object.Application" id="c0a8e701869b19698186c96baddb16c8" name="LDAP"/>
+      </ApplicationRef>
+      <Constraints>
+        <Filter operation="CONTAINS_ALL" property="groups">
+          <Value>
+            <List>
+              <String>cn=contractors,ou=groups,dc=sailpoint,dc=com</String>
+            </List>
+          </Value>
+        </Filter>
+      </Constraints>
+    </Profile>
+  </Profiles>
+</Bundle>
+<Bundle displayName="LDAP Employees IT Role" name="LDAP Employees IT Role" type="it">
+  <Attributes>
+    <Map>
+      <entry key="sysDescriptions">
+        <value>
+          <Map>
+            <entry key="en_US" value="This a LDAP Employees IT Role"/>
+          </Map>
+        </value>
+      </entry>
+    </Map>
+  </Attributes>
+  <Inheritance>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e835f12013ce" name="LDAP Roles"/>
+  </Inheritance>
+  <Profiles>
+    <Profile>
+      <ApplicationRef>
+        <Reference class="sailpoint.object.Application" id="c0a8e701869b19698186c96baddb16c8" name="LDAP"/>
+      </ApplicationRef>
+      <Constraints>
+        <Filter operation="CONTAINS_ALL" property="groups">
+          <Value>
+            <List>
+              <String>cn=employees,ou=groups,dc=sailpoint,dc=com</String>
+            </List>
+          </Value>
+        </Filter>
+      </Constraints>
+    </Profile>
+  </Profiles>
+</Bundle>
+<Bundle displayName="Okta SailPoint SSO IT Role" name="Okta SailPoint SSO IT Role" type="it">
+  <Inheritance>
+    <Reference class="sailpoint.object.Bundle" id="c0a8e70186dd13448186e835f14413cf" name="Okta"/>
+  </Inheritance>
+  <Profiles>
+    <Profile>
+      <ApplicationRef>
+        <Reference class="sailpoint.object.Application" id="c0a8e701869b19698186c98d6e611897" name="Okta"/>
+      </ApplicationRef>
+      <Constraints>
+        <Filter operation="CONTAINS_ALL" property="applications">
+          <Value>
+            <List>
+              <String>0oa8ds0wuxe2L1Ktu5d7</String>
+            </List>
+          </Value>
+        </Filter>
+      </Constraints>
+    </Profile>
+    <Profile>
+      <ApplicationRef>
+        <Reference class="sailpoint.object.Application" id="c0a8e701869b19698186c98d6e611897" name="Okta"/>
+      </ApplicationRef>
+      <Constraints>
+        <Filter operation="CONTAINS_ALL" property="groups">
+          <Value>
+            <List>
+              <String>00g8f7aibrMBPucl55d7</String>
+            </List>
+          </Value>
+        </Filter>
+      </Constraints>
+    </Profile>
+  </Profiles>
+</Bundle>
