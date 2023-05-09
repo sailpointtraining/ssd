@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="Training Provisioning Rule">
+  <Source><![CDATA[
+  import sailpoint.object.Identity;
+  import sailpoint.object.ProvisioningPlan;
+  import sailpoint.object.ProvisioningPlan.AccountRequest;
+  import sailpoint.object.ProvisioningPlan.AttributeRequest;
+  
+  import sailpoint.api.Provisioner;
+  import sailpoint.object.ProvisioningProject;
+  
+  
+  //To create provisioning Plan
+  
+  ProvisioningPlan plan = new ProvisioningPlan();
+  
+  //1. Who need change //Adam.Kennedy
+  Identity idObj = context.getObjectByName(Identity.class,"Amy.Cox");
+  
+  //return idObj.getLinks();
+  plan.setIdentity(idObj);
+  
+  
+  //What change? Adam.Kennedy wants to Enable his PRISM Account
+  //To enable we need PRISM Account Name =Adam.Kennedy
+  //Operation Enable
+  AccountRequest accReq = new AccountRequest();
+  //Account request required 3 things
+  //1. For which Application
+  accReq.setApplication("AD");
+  //2. Whoever required change that person application accountName
+  //accReq.setNativeIdentity("Adam.Kennedy");
+  //3 What is Account operation
+  //different types of account operation, Create, Modify, Delete, Disable, Lock, Unlock
+  accReq.setOperation(ProvisioningPlan.AccountRequest.Operation.Create);
+  
+  AttributeRequest attr = new AttributeRequest();
+  //Required 3 things
+  //1. Attribute Name
+  attr.setName("groups");
+  
+  //2. Attribute Value
+  attr.setValue("User");
+  
+  
+  
+  //3. Operation Attribute 
+  //Different Operation Add, Set, Remove, Revoke, Retain
+  //User Entitlement
+  attr.setOperation(ProvisioningPlan.Operation.Add);
+  
+  //accReq.add(attr);
+  
+  
+  //LDAP Account Request
+  //we can add VPN Entitlement
+  //Application = LDAP
+  //Account Name=cn=Adam.Kennedy,ou=employees,dc=sailpoint,dc=com
+  //Operation  = Modify
+  
+  AccountRequest ldapAcc = new AccountRequest();
+  ldapAcc.setApplication("LDAP");
+  ldapAcc.setNativeIdentity("cn=Adam.Kennedy,ou=employees,dc=sailpoint,dc=com");
+  ldapAcc.setOperation(ProvisioningPlan.AccountRequest.Operation.Modify);
+  
+  //Attribute
+  
+  AttributeRequest ldapAttr = new AttributeRequest();
+  ldapAttr.setName("groups");
+  ldapAttr.setValue("cn=vpn,ou=groups,dc=sailpoint,dc=com");
+  ldapAttr.setOperation(ProvisioningPlan.Operation.Add);
+  
+  AttributeRequest ldapAttr2 = new AttributeRequest();
+  ldapAttr2.setName("groups");
+  ldapAttr2.setValue("cn=contractors,ou=groups,dc=sailpoint,dc=com");
+  ldapAttr2.setOperation(ProvisioningPlan.Operation.Remove);
+  
+  ldapAcc.add(ldapAttr);
+  //ldapAcc.add(ldapAttr2);
+  
+  
+  //Create another account request to remove role
+  AccountRequest roleAcc = new AccountRequest();
+  roleAcc.setApplication("IIQ");
+  roleAcc.setNativeIdentity("Adam.Kennedy");
+  roleAcc.setOperation(ProvisioningPlan.AccountRequest.Operation.Modify);
+  
+  AttributeRequest roleAttr = new AttributeRequest();
+  roleAttr.setName("assignedRoles");
+  roleAttr.setValue("LDAP Contractor Role");
+  roleAttr.setOperation(ProvisioningPlan.Operation.Remove);
+  roleAcc.add(roleAttr);
+  
+  
+ plan.add(accReq);
+  //plan.add(ldapAcc);
+  //plan.add(roleAcc);
+  
+  
+ 
+  //return plan;
+  
+  
+  
+  Provisioner p = new Provisioner(context);
+  
+  ProvisioningProject project = p.compile(plan);
+  
+ // return project;
+  
+  p.execute(project);
+  
+  return project;
+  
+  
+
+
+]]></Source>
+</Rule>

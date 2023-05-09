@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="Provisioning Policy - AD Distinguished Name" type="FieldValue">
+  <ReferencedRules>
+    <Reference class="sailpoint.object.Rule" name="Provisioning Policy - AD Display Name"/>
+  </ReferencedRules>
+  <Signature returnType="String">
+    <Inputs>
+      <Argument name="log">
+        <Description>
+          The log object associated with the SailPointContext.
+        </Description>
+      </Argument>
+      <Argument name="context">
+        <Description>
+          A sailpoint.api.SailPointContext object that can be used to query the database if necessary.
+        </Description>
+      </Argument>
+      <Argument name="identity">
+        <Description>
+           The Identity object that represents the user needing the field value.
+        </Description>
+      </Argument>
+    </Inputs>
+    <Returns>
+      <Argument name="value">
+        <Description>
+          The string value created.
+        </Description>
+      </Argument>
+    </Returns>
+  </Signature>
+  <Source><![CDATA[
+import sailpoint.object.Configuration;
+import sailpoint.object.ProvisioningPlan.ObjectRequest;
+import sailpoint.object.Custom;
+    
+    
+    
+
+
+
+
+String dn = null;  
+String name = identity.getFirstname() + " " + identity.getLastname();
+String dnBase = "OU=Accounts,DC=training,DC=com";
+
+Custom custom = context.getObjectByName(Custom.class,"JML Configuration");
+
+
+
+if (null != custom) {
+  Map containers = custom.get("containers");
+  String department = identity.getAttribute("department");
+  String ou = containers.get(department);
+  
+
+  cn="CN=" +name;
+
+
+  if (null != ou) {
+    dn = cn + ","+ou;
+  } else {
+    dn = cn + dnBase;
+  }
+}
+
+return (dn);
+  ]]></Source>
+</Rule>

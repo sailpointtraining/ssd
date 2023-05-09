@@ -136,10 +136,10 @@
   
          
         try{
-        	$userPrefix = $userUPN.replace('@%%AD_EXCHANGE_EMAILSUFFIX%%','')
+        	$userPrefix = $userUPN.replace('@training.com','')
             Write-Log "INFO" "needs mail is true: $needsMail"
             Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn
-            Enable-RemoteMailbox -identity $usersAMAccountName -PrimarySmtpAddress $primaryRoutingAddress -RemoteRoutingAddress "$userPrefix@%%AD_EXCHANGE_PRIMARYROUTINGADDRESSSUFFIX%%"
+            Enable-RemoteMailbox -identity $usersAMAccountName -PrimarySmtpAddress $primaryRoutingAddress -RemoteRoutingAddress "$userPrefix@training.com"
             Enable-RemoteMailbox -identity $usersAMAccountName -Archive  
             Write-Log "INFO" "Completed Enable-RemoteMailbox -identity $usersAMAccountName -PrimarySmtpAddress $primaryRoutingAddress -RemoteRoutingAddress $userPrefix@training.com"
             Set-ADUser -Identity $usersAMAccountName -add @{ProxyAddresses="smtp:$primaryRoutingAddress","smtp:$usersAMAccountName@training.com","smtp:$userPrefix@onmicrosoft.training.com" -split ","}

@@ -1,0 +1,176 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Workflow PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Workflow explicitTransitions="true" libraries="Identity,Role,PolicyViolation,LCM,BatchRequest" name="Joiner Workflow" type="IdentityLifecycle">
+  <Variable input="true" name="trigger">
+    <Description>The IdentityTrigger</Description>
+  </Variable>
+  <Variable input="true" name="event" transient="true">
+    <Description>
+      The IdentityChangeEvent.  It can be used to build
+      the provisioning plan, but does not need to be
+      persisted with the case, so marked as transient.
+    </Description>
+  </Variable>
+  <Variable input="true" name="identityName">
+    <Description>The name of the identity.</Description>
+  </Variable>
+  <Variable name="plan" output="true"/>
+  <Variable name="project"/>
+  <Variable initializer="none" name="notificationScheme"/>
+  <Variable initializer="none" name="policyScheme"/>
+  <Variable initializer="none" name="approvalScheme"/>
+  <Variable initializer="Joiner" name="flow"/>
+  <Description>Process a new employee.</Description>
+  <RuleLibraries>
+    <Reference class="sailpoint.object.Rule" name="LCM Workflow Library"/>
+  </RuleLibraries>
+  <Step icon="Start" name="Start" posX="28" posY="10">
+    <Transition to="Build Provisioning Plan"/>
+  </Step>
+  <Step icon="Default" name="Build Provisioning Plan" posX="198" posY="34" resultVariable="plan">
+    <Script>
+      <Source><![CDATA[
+        import sailpoint.object.Identity;
+        import sailpoint.object.Link;
+        import sailpoint.object.Custom;
+        import sailpoint.tools.Util;
+
+        import sailpoint.object.ProvisioningPlan;
+        import sailpoint.object.ProvisioningPlan.AccountRequest;
+
+
+        Identity identity = context.getObjectByName(Identity.class,identityName);
+        List accountRequestList = new ArrayList();
+        ProvisioningPlan plan = new ProvisioningPlan();
+
+        if (identity != null) {
+
+          //Create an account request to create an AD account and LDAP Account
+        	AccountRequest adAcc = new AccountRequest(ProvisioningPlan.AccountRequest.Operation.Create,"AD",null,null);
+        	//Assign groups
+        	Custom custom = context.getObjectByName(Custom.class,"JML Configuration");
+        	if (custom != null) {
+        		Map groupsMap = custom.get("birthrightGroups");
+        		String group = groupsMap.get(identity.getAttribute("department"));
+        		if (group != null) {
+        			adAcc.add(new AttributeRequest("memberOf",ProvisioningPlan.Operation.Add,group));
+        		}
+        
+        		Map regionalGroups = custom.get("regionalGroups");
+        		Object regGroups =regionalGroups.get(identity.getAttribute("region"));
+        		if (regGroups != null) {
+        			adAcc.add(new AttributeRequest("memberOf",ProvisioningPlan.Operation.Add,regGroups));
+        		}
+        	}
+        	
+        	AccountRequest ldapAcc = new AccountRequest(ProvisioningPlan.AccountRequest.Operation.Create,"LDAP",null,null);
+        	String type = identity.getType();
+        	if ("employee".equals(type)) {
+        		ldapAcc.add(new AttributeRequest("groups",ProvisioningPlan.Operation.Add,"cn=employees,ou=groups,dc=sailpoint,dc=com"));
+        	}
+        	else {
+        		ldapAcc.add(new AttributeRequest("groups",ProvisioningPlan.Operation.Add,"cn=contractors,ou=groups,dc=sailpoint,dc=com"));
+        	}
+        
+        	plan.add(adAcc);
+        	plan.add(ldapAcc);
+        	
+
+        }
+
+        return plan;
+      ]]></Source>
+    </Script>
+    <Transition to="Process Plan" when="plan != null"/>
+    <Transition to="Stop"/>
+  </Step>
+  <Step icon="Default" name="Process Plan" posX="338" posY="32">
+    <Arg name="identityName" value="ref:identityName"/>
+    <Arg name="plan" value="ref:plan"/>
+    <Arg name="noTriggers" value="true"/>
+    <Arg name="flow" value="ref:flow"/>
+    <Arg name="approvalScheme" value="ref:approvalScheme"/>
+    <Arg name="saveUnmanagedPlan_WithProjectArgument" value="true"/>
+    <Arg name="source" value="LCM"/>
+    <Arg name="policyScheme" value="ref:policyScheme"/>
+    <Arg name="notificationScheme" value="ref:notificationScheme"/>
+    <Return name="project" to="project"/>
+    <WorkflowRef>
+      <Reference class="sailpoint.object.Workflow" name="LCM Provisioning"/>
+    </WorkflowRef>
+    <Transition to="Notify"/>
+  </Step>
+  <Step action="sendEmail" icon="Notify" name="Notify">
+    <Arg name="template" value="Joiner Password notification"/>
+    <Arg name="to" value="script:getUserEmail(identityName, plan)"/>
+    <Arg name="cc" value="script:getManagersEmail(identityName, plan)"/>
+    <Arg name="userMap">
+      <Script>
+        <Source><![CDATA[
+          
+          import sailpoint.object.*;
+          import sailpoint.object.ProvisioningPlan.AttributeRequest;
+          
+          import sailpoint.object.ProvisioningPlan;
+        import sailpoint.object.ProvisioningPlan.AccountRequest;
+          
+          ProvisioningPlan adPlan = project.getPlan("AD");
+ProvisioningPlan ldapPlan = project.getPlan("LDAP");
+
+List acc = new ArrayList();
+if (adPlan != null) {
+	AccountRequest accReq  =adPlan.getAccountRequests().get(0);
+	AttributeRequest passwordAttr = accReq.getAttributeRequest("password");
+	AttributeRequest passwordAttr2 = accReq.getAttributeRequest("*password*");
+	AttributeRequest sAMAttr = accReq.getAttributeRequest("sAMAccountName");
+	
+	Map map = new HashMap();
+	map.put("app","AD");
+	if (passwordAttr != null) {
+			map.put("password",passwordAttr.getValue());
+	}
+		if (passwordAttr2 != null) {
+			map.put("password2",passwordAttr2.getValue());
+	}
+	
+	if (sAMAttr != null) {
+			map.put("sAMAccountName",sAMAttr.getValue());
+	}
+	
+	acc.add(map);
+
+}
+
+if (ldapPlan != null) {
+	AccountRequest accReq  =ldapPlan.getAccountRequests().get(0);
+	AttributeRequest passwordAttr = accReq.getAttributeRequest("password");
+	AttributeRequest passwordAttr2 = accReq.getAttributeRequest("*password*");
+	AttributeRequest sAMAttr = accReq.getAttributeRequest("cn");
+	
+	Map map = new HashMap();
+	map.put("app","LDAP");
+	if (passwordAttr != null) {
+			map.put("password",passwordAttr.getValue());
+	}
+		if (passwordAttr2 != null) {
+			map.put("password2",passwordAttr2.getValue());
+	}
+	
+	if (sAMAttr != null) {
+			map.put("sAMAccountName",sAMAttr.getValue());
+	}
+	
+	acc.add(map);
+
+}
+          
+          return acc;
+
+
+          
+          ]]></Source>
+      </Script>
+    </Arg>
+  </Step>
+  <Step icon="Stop" name="Stop" posX="268" posY="10"/>
+</Workflow>

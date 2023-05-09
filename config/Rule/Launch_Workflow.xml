@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="Training Launch Workflow">
+  <Source><![CDATA[
+    
+
+      import java.util.*;
+
+      import java.text.*;
+
+      import java.util.HashMap;
+
+      import sailpoint.api.sailpointContext;
+
+      import sailpoint.api.Workflower;
+
+      import sailpoint.integration.ProvisioningPlan;
+
+      import sailpoint.integration.ProvisioningPlan.AccountRequest;
+
+      import sailpoint.integration.ProvisioningPlan.AttributeRequest;
+
+      import sailpoint.object.*;
+
+      import sailpoint.tools.Message;
+
+      import sailpoint.tools.GeneralException;
+
+      import sailpoint.tools.xml.XMLObjectFactory;
+
+      import org.apache.log4j.Logger;
+
+      import org.apache.log4j.Level;
+  
+    import sailpoint.object.Identity;
+    import sailpoint.object.ProvisioningPlan;
+    import sailpoint.object.ProvisioningPlan.AccountRequest;
+    import sailpoint.object.ProvisioningPlan.AttributeRequest;
+
+    import sailpoint.api.Provisioner;
+    import sailpoint.object.ProvisioningProject;
+
+
+
+      Logger log = Logger.getLogger("sailpoint.iiq.TestIIQRule");
+
+      // TODO: Remove this forced log level set before checking in this Rule. 
+
+      log.setLevel(Level.DEBUG);
+  
+  String identityName = "Adam.Kennedy";
+
+
+			//Create a Provisioning Plan to pass it to workflow
+
+			ProvisioningPlan plan = new sailpoint.object.ProvisioningPlan();
+  Identity idObj = context.getObjectByName(Identity.class,identityName);
+  plan.setIdentity(idObj);
+  
+  AccountRequest roleAcc = new AccountRequest();
+  roleAcc.setApplication("IIQ");
+  roleAcc.setNativeIdentity(identityName);
+  roleAcc.setOperation(ProvisioningPlan.AccountRequest.Operation.Modify);
+  
+  AttributeRequest roleAttr = new AttributeRequest();
+  roleAttr.setName("assignedRoles");
+  roleAttr.setValue("LDAP Contractor Role");
+  roleAttr.setOperation(ProvisioningPlan.Operation.Remove);
+  roleAcc.add(roleAttr);
+  
+  plan.add(roleAcc);
+
+
+
+      HashMap launchArgsMap = new HashMap();
+
+      //Add needed Workflow Launch Variables to map of name/value pairs
+
+      launchArgsMap.put("allowRequestsWithViolations","true");
+
+      launchArgsMap.put("approvalMode","parallelPoll");
+
+      launchArgsMap.put("approvalScheme","owner");
+
+      launchArgsMap.put("approvalSet","");
+
+      launchArgsMap.put("doRefresh","");
+
+      launchArgsMap.put("enableRetryRequest","false");
+
+      launchArgsMap.put("fallbackApprover","spadmin");
+
+      launchArgsMap.put("foregroundProvisioning","true");
+
+      
+
+      launchArgsMap.put("identityName",identityName);
+
+      launchArgsMap.put("launcher","spadmin");
+
+      launchArgsMap.put("notificationScheme","user,requester");
+
+      launchArgsMap.put("optimisticProvisioning","false");
+
+      launchArgsMap.put("plan",plan);
+
+      launchArgsMap.put("policiesToCheck","");
+
+      launchArgsMap.put("policyScheme","continue");
+
+      launchArgsMap.put("policyViolations","");
+
+      launchArgsMap.put("project","");
+
+      launchArgsMap.put("sessionOwner","spadmin");
+
+      launchArgsMap.put("trace","true");
+
+
+
+      //sailpoint.object.ProvisioningPlan spPlan = new sailpoint.object.ProvisioningPlan();
+
+      //spPlan.fromMap(plan.toMap());
+
+      //launchArgsMap.put("plan", spPlan);
+
+
+
+      //Create WorkflowLaunch and set values
+
+      WorkflowLaunch wflaunch = new WorkflowLaunch();
+
+      Workflow wf = (Workflow) context.getObjectByName(Workflow.class,"LCM Provisioning");
+
+      wflaunch.setWorkflowName(wf.getName());
+
+      wflaunch.setWorkflowRef(wf.getName());
+
+      wflaunch.setCaseName("IdentityUpdate");
+
+      wflaunch.setVariables(launchArgsMap);
+
+      //Create Workflower and launch workflow from WorkflowLaunch
+
+      Workflower workflower = new Workflower(context);
+
+      WorkflowLaunch launch = workflower.launch(wflaunch);
+
+      
+
+			return launch;
+
+   
+
+  ]]></Source>
+</Rule>

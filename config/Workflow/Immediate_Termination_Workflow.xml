@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Workflow PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Workflow explicitTransitions="true" name="Immediate Termination Workflow" type="LCMProvisioning">
+  <Variable input="true" name="identityName"/>
+  <Variable name="identityDisplayName"/>
+  <Variable name="plan" output="true"/>
+  <Variable name="project"/>
+  <Variable initializer="none" name="notificationScheme"/>
+  <Variable initializer="none" name="policyScheme"/>
+  <Variable initializer="none" name="approvalScheme"/>
+  <Variable initializer="Immediate Termination Notification Template" name="managerNotificationTemplate"/>
+  <Step icon="Start" name="Start" posX="42" posY="33">
+    <Transition to="Build Provisioning Plan"/>
+  </Step>
+  <Step icon="Default" name="Build Provisioning Plan" posX="198" posY="34" resultVariable="plan">
+    <Script>
+      <Source><![CDATA[
+        import sailpoint.object.Identity;
+        import sailpoint.object.Link;
+        import sailpoint.tools.Util;
+
+        import sailpoint.object.ProvisioningPlan;
+        import sailpoint.object.ProvisioningPlan.AccountRequest;
+
+
+        Identity identity = context.getObjectByName(Identity.class,identityName);
+        List accountRequestList = new ArrayList();
+        ProvisioningPlan plan = null;
+
+        if (identity != null) {
+
+          List links = identity.getLinks();
+          if (Util.nullSafeSize(links) > 0) {
+            for(Link link : links) {
+              String appName = link.getApplicationName();
+              if (!link.isDisabled()&& !(appName.equals("HRMS") || appName.equals("Contractors"))) {
+                accountRequestList.add(new AccountRequest(ProvisioningPlan.AccountRequest.Operation.Disable,appName,null,link.getNativeIdentity()));
+              }
+            }
+          }
+
+          if (Util.nullSafeSize(accountRequestList) > 0) {
+            plan = new ProvisioningPlan();
+            plan.setIdentity(identity);		
+            plan.setAccountRequests(accountRequestList);
+          }
+
+        }
+
+        return plan;
+      ]]></Source>
+    </Script>
+    <Transition to="Process Plan" when="plan != null"/>
+    <Transition to="Stop"/>
+  </Step>
+  <Step icon="Default" name="Process Plan" posX="338" posY="32">
+    <Arg name="identityName" value="ref:identityName"/>
+    <Arg name="plan" value="ref:plan"/>
+    <Arg name="noTriggers" value="true"/>
+    <Arg name="flow" value="Immediate Termination"/>
+    <Arg name="approvalScheme" value="ref:approvalScheme"/>
+    <Arg name="saveUnmanagedPlan_WithProjectArgument" value="true"/>
+    <Arg name="source" value="LCM"/>
+    <Arg name="policyScheme" value="ref:policyScheme"/>
+    <Arg name="notificationScheme" value="ref:notificationScheme"/>
+    <Return name="project" to="project"/>
+    <WorkflowRef>
+      <Reference class="sailpoint.object.Workflow" name="LCM Provisioning"/>
+    </WorkflowRef>
+    <Transition to="Notify Manager" when="project != null && project.getPlans() != null && project.getPlans().size() > 0"/>
+    <Transition to="Stop"/>
+  </Step>
+  <Step action="sendEmail" icon="Default" name="Notify Manager" posX="485" posY="31">
+    <Arg name="template" value="ref:managerNotificationTemplate"/>
+    <Arg name="to">
+      <Script>
+        <Source><![CDATA[import sailpoint.object.Identity;
+
+
+String managerEmail = "nomanager@training.com";
+
+Identity identity = context.getObjectByName(Identity.class,identityName);
+if (identity != null && identity.getManager() != null) {
+	
+	managerEmail = identity.getManager().getEmail();
+}
+
+return managerEmail;]]></Source>
+      </Script>
+    </Arg>
+    <Arg name="managerDisplayName">
+      <Script>
+        <Source><![CDATA[import sailpoint.object.Identity;
+
+
+String managerDisplayName = "Manager";
+
+Identity identity = context.getObjectByName(Identity.class,identityName);
+if (identity != null && identity.getManager() != null) {
+	
+	managerDisplayName = identity.getManager().getDisplayName();
+}
+
+return managerDisplayName;]]></Source>
+      </Script>
+    </Arg>
+    <Arg name="employeeid">
+      <Script>
+        <Source><![CDATA[import sailpoint.object.Identity;
+
+
+String employeeid = null;
+
+Identity identity = context.getObjectByName(Identity.class,identityName);
+if (identity != null) {
+	
+	employeeid = identity.getAttribute("employeeid");
+}
+
+return employeeid;]]></Source>
+      </Script>
+    </Arg>
+    <Arg name="identityDisplayName" value="ref:identityDisplayName"/>
+    <Transition to="Stop"/>
+  </Step>
+  <Step icon="Stop" name="Stop" posX="625" posY="30"/>
+</Workflow>

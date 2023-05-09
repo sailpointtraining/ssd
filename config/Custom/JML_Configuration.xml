@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Custom PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Custom name="JML Configuration">
+  <Attributes>
+    <Map>
+      <entry key="birthrightGroups">
+        <value>
+          <Map>
+            <entry key="Accounting" value="CN=Legal Division,OU=Groups,DC=training,DC=com"/>
+            <entry key="Engineering" value="CN=Development,OU=Groups,DC=training,DC=com"/>
+            <entry key="Executive Management" value="CN=Business Intelligence,OU=Groups,DC=training,DC=com"/>
+            <entry key="Finance" value="CN=Finance Division,OU=Groups,DC=training,DC=com"/>
+            <entry key="Human Resources" value="CN=IT Services,OU=Groups,DC=training,DC=com"/>
+            <entry key="Information Technology" value="CN=Information Technologies,OU=Groups,DC=training,DC=com"/>
+            <entry key="Inventory" value="CN=Quality Assurance,OU=Groups,DC=training,DC=com"/>
+            <entry key="Regional Operations" value="CN=Operations,OU=Groups,DC=training,DC=com"/>
+          </Map>
+        </value>
+      </entry>
+      <entry key="containers">
+        <value>
+          <Map>
+            <entry key="Accounting" value="OU=Accounting,OU=Contractors,OU=Accounts,DC=training,DC=com"/>
+            <entry key="Engineering" value="OU=Engineering,OU=Contractors,OU=Accounts,DC=training,DC=com"/>
+            <entry key="Executive Management" value="OU=Executive Management,OU=Contractors,OU=Accounts,DC=training,DC=com"/>
+            <entry key="Finance" value="OU=Finance,OU=Contractors,OU=Accounts,DC=training,DC=com"/>
+            <entry key="Human Resources" value="OU=Human Resources,OU=Contractors,OU=Accounts,DC=training,DC=com"/>
+            <entry key="Information Technology" value="OU=Information Technology,OU=Contractors,OU=Accounts,DC=training,DC=com"/>
+            <entry key="Inventory" value="OU=Inventory,OU=Contractors,OU=Accounts,DC=training,DC=com"/>
+            <entry key="Regional Operations" value="OU=Regional Operations,OU=Contractors,OU=Accounts,DC=training,DC=com"/>
+            <entry key="default" value="OU=Accounts,DC=training,DC=com"/>
+          </Map>
+        </value>
+      </entry>
+      <entry key="regionalGroups">
+        <value>
+          <Map>
+            <entry key="Americas" value="CN=All-USA,OU=Groups,DC=training,DC=com"/>
+            <entry key="Asia-Pacific">
+              <value>
+                <List>
+                  <String>CN=All-APAC,OU=Groups,DC=training,DC=com</String>
+                  <String>CN=VPN,OU=Groups,DC=training,DC=com</String>
+                </List>
+              </value>
+            </entry>
+            <entry key="Europe">
+              <value>
+                <List>
+                  <String>CN=All-Europe,OU=Groups,DC=training,DC=com</String>
+                  <String>CN=VPN,OU=Groups,DC=training,DC=com</String>
+                </List>
+              </value>
+            </entry>
+          </Map>
+        </value>
+      </entry>
+    </Map>
+  </Attributes>
+</Custom>
